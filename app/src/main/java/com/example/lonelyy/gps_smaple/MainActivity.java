@@ -2,9 +2,12 @@ package com.example.lonelyy.gps_smaple;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -15,10 +18,16 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.CursorAdapter;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.example.lonelyy.gps_smaple.db.DBHelper;
 
 /**
  * An example full-screen activity that shows and hides the system UI (i.e.
@@ -30,11 +39,24 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private LocationManager lms;
     private String bestProvider = LocationManager.GPS_PROVIDER;    //最佳資訊提供者
 
+    private DBHelper dbHelper;
+    private SQLiteDatabase db;
+    private ListView listView = null;
+    private Cursor maincursor; // 記錄目前資料庫查詢指標
+    private SimpleCursorAdapter adapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+
+        listView = (ListView) findViewById(R.id.listView);
+        listView.setEmptyView(findViewById(R.id.emptyView));
+
+        dbHelper = new DBHelper(this);
+        db = dbHelper.getWritableDatabase();
+        Log.println(Log.ERROR, "Main-test-run", "Main-test-run");
 
         //取得系統定位服務
         LocationManager status = (LocationManager) (this.getSystemService(Context.LOCATION_SERVICE));
@@ -47,6 +69,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Toast.makeText(this, "請開啟定位服務", Toast.LENGTH_LONG).show();
             startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));    //開啟設定頁面
         }
+
+        refreshListView();
     }
 
 
@@ -141,9 +165,51 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
 
             longitude_txt.setText(String.valueOf(longitude));
             latitude_txt.setText(String.valueOf(latitude));
+
+            // 將記錄新增到coffee資料表的參數
+            ContentValues cv = new ContentValues();
+            cv.put("lon", longitude);
+            cv.put("lat", latitude);
+            cv.put("trip_id", 1);
+
+            // 執行SQL語句
+            long id = db.insert("gps_records", null, cv);
+
+            refreshListView();
         }
         else {
             Toast.makeText(this, "無法定位座標", Toast.LENGTH_LONG).show();
         }
+    }
+
+    // 重新整理ListView（將資料重新匯入）
+    private void refreshListView() {
+        if (maincursor == null) {
+            // 1.取得查詢所有資料的cursor
+            maincursor = db.rawQuery(
+                    "SELECT id as _id, trip_id, lon, lat, created_time FROM gps_records order by id desc", null);
+            // 2.設定ListAdapter適配器(使用SimpleCursorAdapter)
+            adapter = new SimpleCursorAdapter(this, R.layout.row,
+                    maincursor,
+                    new String[] { "_id", "trip_id", "lon", "lat", "created_time" },
+                    new int[] { R.id.itemId, R.id.tripId, R.id.lon,  R.id.lat,  R.id.createTime},
+                    CursorAdapter.FLAG_REGISTER_CONTENT_OBSERVER);
+            // 3.注入適配器
+            listView.setAdapter(adapter);
+        } else {
+            if (maincursor.isClosed()) { // 彌補requery()不會檢查cursor closed的問題
+                maincursor = null;
+                refreshListView();
+            } else {
+                maincursor.requery(); // 若資料龐大不建議使用此法（應改用 CursorLoader）
+                adapter.changeCursor(maincursor);
+                adapter.notifyDataSetChanged();
+            }
+        }
+    }
+
+    public void onClearButtonClick(View view){
+        db.delete("gps_records", "id > 0", null);
+        refreshListView();
     }
 }

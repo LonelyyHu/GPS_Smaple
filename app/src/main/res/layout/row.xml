@@ -1,0 +1,47 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/RelativeLayout01"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingBottom="4dip"
+    android:orientation="horizontal"
+    android:paddingLeft="12dip"
+    android:paddingRight="12dip"
+    android:background="#b7e5cd">
+
+    <TextView
+        android:id="@+id/itemId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="12dip"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tripId"
+        android:layout_width="40dp"
+        android:layout_height="25dp"
+        android:paddingLeft="12dip" />
+
+    <TextView
+        android:id="@+id/lon"
+        android:layout_width="100dp"
+        android:layout_height="25dp"
+        android:layout_centerVertical="true"
+        android:paddingLeft="12dip"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/lat"
+        android:layout_width="100dp"
+        android:layout_height="25dp"
+        android:layout_centerVertical="true"
+        android:paddingLeft="12dip"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/createTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingLeft="12dip"
+        android:visibility="gone" />
+
+</LinearLayout>
